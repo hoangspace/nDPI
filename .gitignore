@@ -54,3 +54,12 @@ stamp-h1
 *.swp
 /test-driver
 /tests/Makefile
+ndpi/.vs
+example/Win32/.vs
+ndpi/Debug
+ndpi/Release
+ndpi/ndpi/Debug
+ndpi/ndpi/Release
+ndpi/ndpiExample/Debug
+ndpi/ndpiExample/Release
+*.user

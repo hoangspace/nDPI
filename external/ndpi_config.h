@@ -1,0 +1,1 @@
+#define NDPI_GIT_RELEASE "2.8-stable"
