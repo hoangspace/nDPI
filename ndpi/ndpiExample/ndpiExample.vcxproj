@@ -115,7 +115,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ndpiExample.cpp" />
+    <ClCompile Include="ndpiExample.c" />
+    <ClCompile Include="ndpi_util.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ndpi_util.h" />
+    <ClInclude Include="uthash.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
