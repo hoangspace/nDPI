@@ -12,23 +12,19 @@
 #include <search.h>
 #include <pcap.h>
 #include <signal.h>
-#include <pthread.h>
-#include <sys/socket.h>
 #include <assert.h>
 #include <math.h>
 #include "ndpi_api.h"
 #include "uthash.h"
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/mman.h>
-#include <libgen.h>
 
 #ifdef HAVE_JSON_C
 #include <json.h>
 #endif
 
 #include "ndpi_util.h"
-
+#pragma comment(lib, "Ws2_32.lib")
  /** Client parameters **/
 static char *_pcap_file[MAX_NUM_READER_THREADS]; /**< Ingress pcap file/interfaces */
 static FILE *playlist_fp[MAX_NUM_READER_THREADS] = { NULL }; /**< Ingress playlist */
@@ -156,13 +152,14 @@ static u_int16_t extcap_packet_filter = (u_int16_t)-1;
 // struct associated to a workflow for a thread
 struct reader_thread {
 	struct ndpi_workflow *workflow;
-	pthread_t pthread;
+	//pthread_t pthread;
 	u_int64_t last_idle_scan_time;
 	u_int32_t idle_scan_idx;
 	u_int32_t num_idle_flows;
 	struct ndpi_flow_info *idle_flows[IDLE_SCAN_BUDGET];
 };
 
+HANDLE threadHandles[MAX_NUM_READER_THREADS];
 // array for every thread created for a flow
 static struct reader_thread ndpi_thread_info[MAX_NUM_READER_THREADS];
 
@@ -528,7 +525,7 @@ static void parseOptions(int argc, char **argv) {
 			if (nDPI_LogLevel < 0) nDPI_LogLevel = 0;
 			if (nDPI_LogLevel > 3) {
 				nDPI_LogLevel = 3;
-				_debug_protocols = strdup("all");
+				_debug_protocols = _strdup("all");
 			}
 			break;
 
@@ -546,7 +543,7 @@ static void parseOptions(int argc, char **argv) {
 			break;
 
 		case 'w':
-			results_path = strdup(optarg);
+			results_path = _strdup(optarg);
 			if ((results_file = fopen(results_path, "w")) == NULL) {
 				printf("Unable to write in file %s: quitting\n", results_path);
 				return;
@@ -580,12 +577,12 @@ static void parseOptions(int argc, char **argv) {
 			break;
 
 		case '7':
-			extcap_capture_fifo = strdup(optarg);
+			extcap_capture_fifo = _strdup(optarg);
 			break;
 
 		case '8':
 			nDPI_LogLevel = NDPI_LOG_DEBUG_EXTRA;
-			_debug_protocols = strdup("all");
+			_debug_protocols = _strdup("all");
 			break;
 
 		case '9':
@@ -594,7 +591,7 @@ static void parseOptions(int argc, char **argv) {
 			break;
 
 		case 257:
-			_debug_protocols = strdup(optarg);
+			_debug_protocols = _strdup(optarg);
 			break;
 
 		default:
@@ -655,7 +652,7 @@ static void parseOptions(int argc, char **argv) {
 /**
  * @brief From IPPROTO to string NAME
  */
-static char* ipProto2Name(u_int16_t proto_id) {
+static const char* ipProto2Name(u_int16_t proto_id) {
 	static char proto[8];
 
 	switch (proto_id) {
@@ -2529,7 +2526,7 @@ static void runPcapLoop(u_int16_t thread_id) {
 /**
  * @brief Process a running thread
  */
-void * processing_thread(void *_thread_id) {
+void processing_thread(void *_thread_id) {
 	long thread_id = (long)_thread_id;
 	char pcap_error_buffer[PCAP_ERRBUF_SIZE];
 
@@ -2593,7 +2590,11 @@ pcap_loop:
 
 	return NULL;
 }
-
+DWORD WINAPI ProcessingThread(LPVOID lpParam)
+{
+	processing_thread(lpParam);
+	return 0;
+}
 
 /**
  * @brief Begin, process, end detection process
@@ -2625,32 +2626,25 @@ void test_lib() {
 
 	gettimeofday(&begin, NULL);
 
-	int status;
 	void * thd_res;
 
 	/* Running processing threads */
 	for (thread_id = 0; thread_id < num_threads; thread_id++) {
-		status = pthread_create(&ndpi_thread_info[thread_id].pthread, NULL, processing_thread, (void *)thread_id);
+		threadHandles[thread_id] = CreateThread(NULL, 0, ProcessingThread, thread_id, 0, NULL);
+		//status = pthread_create(&ndpi_thread_info[thread_id].pthread, NULL, processing_thread, (void *)thread_id);
 		/* check pthreade_create return value */
-		if (status != 0) {
+		if (threadHandles[thread_id] == 0) {
 			fprintf(stderr, "error on create %ld thread\n", thread_id);
 			exit(-1);
 		}
 	}
-	/* Waiting for completion */
-	for (thread_id = 0; thread_id < num_threads; thread_id++) {
-		status = pthread_join(ndpi_thread_info[thread_id].pthread, &thd_res);
-		/* check pthreade_join return value */
-		if (status != 0) {
-			fprintf(stderr, "error on join %ld thread\n", thread_id);
-			exit(-1);
-		}
-		if (thd_res != NULL) {
-			fprintf(stderr, "error on returned value of %ld joined thread\n", thread_id);
-			exit(-1);
-		}
-	}
 
+	WaitForMultipleObjects(num_threads, threadHandles, TRUE, INFINITE);
+	for (int i = 0; i < num_threads; i++)
+	{
+		CloseHandle(threadHandles[i]);
+	}
+	
 	gettimeofday(&end, NULL);
 	processing_time_usec = end.tv_sec * 1000000 + end.tv_usec - (begin.tv_sec * 1000000 + begin.tv_usec);
 	setup_time_usec = begin.tv_sec * 1000000 + begin.tv_usec - (startup_time.tv_sec * 1000000 + startup_time.tv_usec);
@@ -3334,7 +3328,7 @@ struct timezone {
 	int tz_dsttime;     /* type of dst correction */
 };
 
-
+#if 0
 /**
    @brief Set time
 **/
@@ -3367,4 +3361,5 @@ int gettimeofday(struct timeval *tv, struct timezone *tz) {
 
 	return 0;
 }
+#endif
 #endif /* WIN32 */

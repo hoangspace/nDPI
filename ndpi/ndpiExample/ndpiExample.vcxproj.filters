@@ -15,10 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ndpiExample.c">
+    <ClCompile Include="ndpi_util.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ndpi_util.c">
+    <ClCompile Include="..\..\external\getopt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ndpiExample.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
