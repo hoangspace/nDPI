@@ -63,3 +63,7 @@ ndpi/ndpi/Release
 ndpi/ndpiExample/Debug
 ndpi/ndpiExample/Release
 *.user
+WpdPack/Examples-pcap/.vs
+WpdPack/Examples-pcap/Backup
+WpdPack/Examples-pcap/Debug
+WpdPack/Examples-pcap/Release
