@@ -1985,7 +1985,7 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
 				t = (float)(cumulative_stats.ip_packet_count * 1000000) / (float)traffic_duration;
 				b = (float)(cumulative_stats.total_wire_bytes * 8 * 1000000) / (float)traffic_duration;
 
-				strftime(when, sizeof(when), "%d/%b/%Y %H:%M:%S", localtime(&pcap_start.tv_sec));
+				strftime(when, sizeof(when), "%d/%b/%Y %H:%M:%S", localtime(&(pcap_start.tv_sec)));
 				printf("\tAnalysis begin:        %s\n", when);
 				strftime(when, sizeof(when), "%d/%b/%Y %H:%M:%S", localtime(&pcap_end.tv_sec));
 				printf("\tAnalysis end:          %s\n", when);
